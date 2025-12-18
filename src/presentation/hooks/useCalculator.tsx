@@ -1,23 +1,52 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from 'react';
 
 enum Operator {
-    add,
-    subtract,
-    multiply,
-    divide
+    add = '+',
+    subtract = '-',
+    multiply = 'x',
+    divide = '÷',
 }
 
 
+
+
 export const useCalculator = () => {
+
+    const [formula, setFormula] = useState('');
 
     const [number, setNumber] = useState('0');
     const [prevNumber, setPrevNumber] = useState('0');
 
     const lastOperation = useRef<Operator>();
 
+    useEffect(() => {
+        if (lastOperation.current) {
+            const firstFormulaPart = formula.split(' ').at(0);
+            setFormula(`${firstFormulaPart} ${lastOperation.current} ${number}`);
+        } else {
+            setFormula(number);
+        }
+
+    }, [number]);
+
+
+    useEffect(() => {
+        const subResult = calculateSubResult();
+        setPrevNumber(`${subResult}`);
+    }, [formula])
+
+
+
+
+
+
     const clean = () => {
         setNumber('0');
-    }
+        setPrevNumber('0');
+        lastOperation.current = undefined;
+        setFormula('');
+    };
+
     // Borrar el último número
     const deleteOperation = () => {
 
@@ -36,6 +65,7 @@ export const useCalculator = () => {
         setNumber('0');
 
     };
+
 
     const toggleSign = () => {
         if (number.includes('-')) {
@@ -81,6 +111,7 @@ export const useCalculator = () => {
     };
 
     const setLastNumber = () => {
+        calculateResult();
 
         if (number.endsWith('.')) {
             setPrevNumber(number.slice(0, -1));
@@ -89,76 +120,84 @@ export const useCalculator = () => {
         }
 
         setNumber('0');
-    }
+    };
 
     const divideOperation = () => {
         setLastNumber();
-        lastOperation.current = Operator.divide
-    }
+        lastOperation.current = Operator.divide;
+    };
 
     const multiplyOperation = () => {
         setLastNumber();
-        lastOperation.current = Operator.multiply
-    }
+        lastOperation.current = Operator.multiply;
+    };
 
     const subtractOperation = () => {
         setLastNumber();
-        lastOperation.current = Operator.subtract
-    }
+        lastOperation.current = Operator.subtract;
+    };
 
     const addOperation = () => {
         setLastNumber();
-        lastOperation.current = Operator.add
-    }
+        lastOperation.current = Operator.add;
+    };
 
 
     const calculateResult = () => {
-        const num1 = Number(number);
-        const num2 = Number(prevNumber);
 
-        switch (lastOperation.current) {
+        const result = calculateSubResult();
+        setFormula(`${result}`);
+
+        lastOperation.current = undefined;
+        setPrevNumber('0');
+    };
+
+    const calculateSubResult = (): number => {
+
+        const [firstValue, operation, secondValue] = formula.split(' ');
+
+        const num1 = Number(firstValue);
+        const num2 = Number(secondValue); //NaN
+
+        if (isNaN(num2)) return num1;
+
+        switch (operation) {
 
             case Operator.add:
-                setNumber(`${num1 + num2}`);
-                break
+                return num1 + num2;
 
             case Operator.subtract:
-                setNumber(`${num2 - num1}`);
-                break
+                return num1 - num2;
 
             case Operator.multiply:
-                setNumber(`${num2 * num2}`);
-                break
+                return num1 * num2;
 
             case Operator.divide:
-                setNumber(`${num2 / num1}`);
-                break
-
+                return num1 / num2;
 
             default:
-                throw new Error('Operacion no valida')
+                throw new Error('Operation not implemented');
         }
 
-        setPrevNumber('0');
-    }
+    };
+
 
 
     return {
-        //propiedades
+        // Properties
         number,
         prevNumber,
+        formula,
 
-
-
-        //metodos
+        // Methods
         buildNumber,
         toggleSign,
         clean,
         deleteOperation,
+        divideOperation,
         multiplyOperation,
         subtractOperation,
-        divideOperation,
         addOperation,
-        calculateResult
-    }
+        calculateResult,
+    };
 }
